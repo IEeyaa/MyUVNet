@@ -91,12 +91,30 @@ class FaceModel:
         u_pos, v_pos = uv_sample
         surface = BRep_Tool.Surface(self.topods_face)
         props = GeomLProp_SLProps(surface, u_pos, v_pos, 1, 1e-9)
-        normal_vec = props.Normal()
+        try:
+            normal_vec = props.Normal()
+        except:
+            return np.array([0, 0, 0])
         # 没有反
         if not self.isReserved:
             return np.array([-normal_vec.X(), -normal_vec.Y(), -normal_vec.Z()])
 
         return np.array([normal_vec.X(), normal_vec.Y(), normal_vec.Z()])
+
+    def uv_grid_curvature(self, uv_sample):
+        u_pos, v_pos = uv_sample
+        surface = BRep_Tool.Surface(self.topods_face)
+        props = GeomLProp_SLProps(surface, u_pos, v_pos, 1, 1e-9)
+
+        try:
+            gauss_curvatures = props.GaussianCurvature()
+            mean_curvature = props.MeanCurvature()
+
+        except:
+            return [0, 0]
+
+        return np.array([gauss_curvatures, mean_curvature])
+
 
     def uv_grid_visibility(self, uv_sample):
         """

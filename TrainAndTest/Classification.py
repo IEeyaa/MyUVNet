@@ -12,50 +12,19 @@ from torch.utils.data import Dataset, DataLoader
 from UVGraph.modelToGraph import load_from_dgl_file
 
 CHAR2LABEL = {
-        'Bearnings': 0,
-        'Bolts': 1,
-        'Boxes': 2,
-        'Brackets': 3,
-        'Bushing': 4,
-        'Bushing_Damping_Liners': 5,
-        'Collets': 6,
-        'Cotter_Pin': 7,
-        'External Retaining Rings': 8,
-        'Eyesbolts With Shoulders': 9,
-        'Gasket': 10,
-        'Gear Rod Stock': 11,
-        'Gears': 12,
-        'Grommets': 13,
-        'HeadlessScrews': 14,
-        'Hex_Head_Screws': 15,
-        'Holebolts With Shoulders': 16,
-        'Idler Sprocket': 17,
-        'Keyway_Shaft': 18,
-        'Machine_Key': 19,
-        'Miter Gear Set Screw': 20,
-        'Nuts': 21,
-        'O_Rings': 22,
-        'Pipes': 23,
-        'Pipe_fittings': 24,
-        'Pipe_Joints': 25,
-        'Rectangular Gear Rack': 26,
-        'Rollers': 27,
-        'Rotary_Shaft': 28,
-        'Routing EyeBolts Bent Closed Eye': 29,
-        'Shaft_Collar': 30,
-        'Sleeve Washers': 31,
-        'Slotted_Flat_Head_Screws': 32,
-        'Socket-Connect Flanges': 33,
-        'Socket_Head_Screws': 34,
-        'Sprocket Taper-Lock Bushing': 35,
-        'Strut Channel Floor Mount': 36,
-        'Strut Channel Side-Side': 37,
-        'Tag Holder': 38,
-        'Thumb_Screws': 39,
-        'Washers': 40,
-        'Webbing Guide': 41,
-        'Wide Grip External Retaining Ring': 42,
-        }
+    'Bearnings': 0, 'Bolts': 1, 'Boxes': 2, 'Brackets': 3,
+    'Bushing': 4, 'Bushing_Damping_Liners': 5, 'Collets': 6, 'Cotter_Pin': 7,
+    'External Retaining Rings': 8, 'Eyesbolts With Shoulders': 9, 'Gasket': 10, 'Gear Rod Stock': 11,
+    'Gears': 12, 'Grommets': 13, 'HeadlessScrews': 14, 'Hex_Head_Screws': 15,
+    'Holebolts With Shoulders': 16, 'Idler Sprocket': 17, 'Keyway_Shaft': 18, 'Machine_Key': 19,
+    'Miter Gear Set Screw': 20, 'Nuts': 21, 'O_Rings': 22, 'Pipes': 23,
+    'Pipe_fittings': 24, 'Pipe_Joints': 25, 'Rectangular Gear Rack': 26, 'Rollers': 27,
+    'Rotary_Shaft': 28, 'Routing EyeBolts Bent Closed Eye': 29, 'Shaft_Collar': 30, 'Sleeve Washers': 31,
+    'Slotted_Flat_Head_Screws': 32, 'Socket-Connect Flanges': 33, 'Socket_Head_Screws': 34,
+    'Sprocket Taper-Lock Bushing': 35,
+    'Strut Channel Floor Mount': 36, 'Strut Channel Side-Side': 37, 'Tag Holder': 38, 'Thumb_Screws': 39,
+    'Washers': 40, 'Wide Grip External Retaining Ring': 41,
+}
 
 
 def get_all_graph_files(folder_path):
@@ -95,23 +64,26 @@ class ClassificationLoading(Dataset):
     def __len__(self):
         return len(self.datas)
 
-
     def __getitem__(self, idx):
         sample = self.datas[idx]
         return sample
 
     def load_all_graphs(self, folder_path, json_path):
-
         with open(json_path, "r") as json_file:
             graph_file_names = (json.load(json_file))[self.method]
 
-        graphs = [load_one_graph(graph_file_name + ".bin", folder_path) for graph_file_name in graph_file_names]
-        labels = [re.match(r'([a-zA-Z_]+)_\d+', graph_file_name).group(1) for graph_file_name in graph_file_names]
+        directory = "./TrainFiles1"
+        files_in_directory = os.listdir(directory)
+
+        graphs = [load_one_graph(graph_file_name + ".bin", folder_path) for graph_file_name in graph_file_names if
+                  graph_file_name + ".bin" in files_in_directory]
+        labels = [re.match(r'^(.*?)(_\d+)*$', graph_file_name).group(1) for graph_file_name in graph_file_names if
+                  graph_file_name + ".bin" in files_in_directory]
         for i in range(0, len(graphs)):
             self.datas.append({
                 "graph": graphs[i],
                 "filename": graph_file_names[i],
-                "label": torch.tensor([CHAR2LABEL.get(labels[i], -1)])
+                "label": torch.tensor([CHAR2LABEL.get(labels[i], -1)]).long()
             })
 
     def get_dataloader(self, batch_size=64, shuffle=True, num_workers=0):

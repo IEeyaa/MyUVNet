@@ -85,12 +85,12 @@ class UVNetClassifier(nn.Module):
 
         # CNN
         self.curv_encoder = Network.CNNEdge(
-            input_channels=6, output_channels=crv_emb_dim
+            input_channels=7, output_channels=crv_emb_dim
         )
 
         # CNN
         self.surf_encoder = Network.CNNFace(
-            input_channels=7, output_channels=srf_emb_dim
+            input_channels=8, output_channels=srf_emb_dim
         )
 
         # GNN
@@ -154,6 +154,7 @@ class Classification(pl.LightningModule):
         labels = batch["label"].to(self.device)
         inputs.ndata["x"] = inputs.ndata["x"].permute(0, 3, 1, 2)
         inputs.edata["x"] = inputs.edata["x"].permute(0, 2, 1)
+        print(inputs.edata["x"])
         logits = self.model(inputs)
         loss = F.cross_entropy(logits, labels, reduction="mean")
         self.log("train_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
@@ -165,6 +166,7 @@ class Classification(pl.LightningModule):
         inputs = batch["graph"].to(self.device)
         labels = batch["label"].to(self.device)
         inputs.ndata["x"] = inputs.ndata["x"].permute(0, 3, 1, 2)
+        print(len(inputs.edata["x"][0][0][0]))
         inputs.edata["x"] = inputs.edata["x"].permute(0, 2, 1)
 
         logits = self.model(inputs)

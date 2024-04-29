@@ -97,6 +97,27 @@ class EdgeModel:
         return np.array([-tangent.X(), -tangent.Y(), -tangent.Z()])
 
 
+    def u_grid_curvature(self, u_sample):
+        """
+        Get the curvature of a point on the curve based on its parameter.
+
+        Args:
+            u_sample (float): Float containing u_pos.
+
+        Returns:
+            float: Curvature at the specified parameter.
+        """
+        u_pos = u_sample
+        curve = BRep_Tool.Curve(self.topods_edge)[0]
+
+        point = gp_Pnt()
+        tangent = gp_Vec()
+        curvature = gp_Vec()  # Initialize curvature
+
+        curve.D2(u_pos, point, tangent, curvature)
+
+        return curvature.Magnitude()
+
     def specific_curve(self):
         """
         Get the specific edge curve geometry

@@ -18,10 +18,10 @@ from dgl import save_graphs, load_graphs
 
 
 # 将shp模型转换成uv_grid
-def step_model_to_graph(graph_info, model_save_path, face_u_num=10, face_v_num=10, edge_u_num=10):
+def step_model_to_graph(graph_info, model_load_path, model_save_path, face_u_num=10, face_v_num=10, edge_u_num=10):
 
     model_name, label_name, label_index = graph_info
-    model = read_step_file("./RawFiles/" + label_name + "/STEP/" + model_name)
+    model = read_step_file(model_load_path + "/" + label_name + "/STEP/" + model_name)
 
     # 建立索引Map
     eMap = EntityMapModel(model)
@@ -31,20 +31,20 @@ def step_model_to_graph(graph_info, model_save_path, face_u_num=10, face_v_num=1
     src_list, dst_list, edge_list = face_adjacency(model, eMap)
     # 遍历所有面: point, normal(法向量), mask(是否在面上)
     for face in eMap.face_map.values():
-        uv_grid_point, uv_grid_normal, uv_grid_visibility = get_uvgrid_by_face(face, face_u_num, face_v_num)
+        uv_grid_point, uv_grid_normal, uv_grid_visibility, uv_grid_curve = get_uvgrid_by_face(face, face_u_num, face_v_num)
         mask = np.logical_or(uv_grid_visibility == 0, uv_grid_visibility == 2)  # 0: Inside, 1: Outside, 2: On boundary
         # Concatenate channel-wise to form face feature tensor
-        face_feat = np.concatenate((uv_grid_point, uv_grid_normal, mask), axis=-1)
+        face_feat = np.concatenate((uv_grid_point, uv_grid_normal, uv_grid_curve, mask), axis=-1)
         graph_face_feat.append(face_feat)
     graph_face_feat = np.asarray(graph_face_feat)
-
     graph_edge_feat = []
     # 遍历所有边: point, tangent(切向量)
     for edge in edge_list:
-        u_grid_point, u_grid_tangent = get_ugrid_by_edge(edge, edge_u_num)
-        edge_feat = np.concatenate((u_grid_point, u_grid_tangent), axis=-1)
+        u_grid_point, u_grid_tangent, u_grid_curve = get_ugrid_by_edge(edge, edge_u_num)
+        edge_feat = np.concatenate((u_grid_point, u_grid_tangent, u_grid_curve), axis=-1)
         graph_edge_feat.append(edge_feat)
     graph_edge_feat = np.asarray(graph_edge_feat)
+
 
     # 储存信息
     dgl_graph = dgl.graph((src_list, dst_list), num_nodes=len(eMap.face_map))
@@ -120,18 +120,27 @@ def get_step_files_in_folders(parent_folder):
 
 def build_from_graph(parent_folder, split_save_path, bin_save_path):
     all_files, split_file = get_step_files_in_folders(parent_folder)
-    # file_len = len(all_files)
-    # for index, item in enumerate(all_files):
-    #     step_model_to_graph(item, bin_save_path, 10, 10, 10)
-    #     print("\r", end="")
-    #     i = int(index / file_len * 100)
-    #     print("Graph Encoder progress: {}%: ".format(i), "▋" * (i // 2), end="")
-    #     sys.stdout.flush()
-    #     time.sleep(0.05)
+    file_len = len(all_files)
+
+    directory = bin_save_path
+    files_in_directory = os.listdir(directory)
+
+    for index, item in enumerate(all_files):
+        file_name = item[1] + "_" + str(item[2]) + ".bin"
+        if file_name in files_in_directory:
+            continue
+        step_model_to_graph(item, parent_folder, bin_save_path, 10, 10, 10)
+        print("\r", end="")
+        i = int(index / file_len * 100)
+        print("Graph Encoder progress: {}%: ".format(i), "▋" * (i // 2), end="")
+        print("Loading Info: {}\{}".format(index, file_len), end="")
+        sys.stdout.flush()
+        time.sleep(0.05)
 
     with open(split_save_path, "w") as json_file:
         json.dump(split_file, json_file, indent=4)
 
 
 if __name__ == '__main__':
-    build_from_graph("./RawFiles", "split.json", "./TrainFiles")
+    print(1)
+

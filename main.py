@@ -12,7 +12,7 @@ from Net.Model import Classification
 from TrainAndTest.Classification import ClassificationLoading
 
 num_class = 26
-train_root_dir = "./TrainFiles"
+train_root_dir = "TrainFiles1"
 batch_size = 64
 num_workers = 0
 checkpoint = "./checkpoints/epoch=44-step=675.ckpt"
@@ -61,6 +61,6 @@ def classification(method="train", max_epoch=50):
 
 
 if __name__ == '__main__':
-    # classification("train", 100)
+    classification("train", 1)
 
-    classification("test")
+    # classification("test")
